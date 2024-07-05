@@ -1,1 +1,4 @@
 music21
+pandas
+python-rtmidi
+mido
