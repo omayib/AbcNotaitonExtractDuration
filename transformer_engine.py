@@ -89,8 +89,8 @@ def generate_melody(model, start_sequence_notes, start_sequence_durations, max_l
             input_notes = torch.tensor(generated_notes[-512:], dtype=torch.long).unsqueeze(0)
             input_durations = torch.tensor(generated_durations[-512:], dtype=torch.long).unsqueeze(0)
             notes_output, durations_output = model(input_notes, input_durations)
-            next_note = notes_output.argmax(dim=-1).item()
-            next_duration = durations_output.argmax(dim=-1).item()
+            next_note = notes_output[0, -1].argmax(dim=-1).item()
+            next_duration = durations_output[0, -1].argmax(dim=-1).item()
             generated_notes.append(next_note)
             generated_durations.append(next_duration)
             if next_note == END_TOKEN or next_duration == END_TOKEN:  # Example end condition
@@ -98,8 +98,10 @@ def generate_melody(model, start_sequence_notes, start_sequence_durations, max_l
     return generated_notes, generated_durations
 
 # Example start sequence
-start_sequence_notes = [60, 62, 64]  # Example starting notes
-start_sequence_durations = [ 1, 1, 2]  # Example starting durations
+START_TOKEN = 0  # Define your start token if not already
+END_TOKEN = 1    # Define your end token if not already
+start_sequence_notes = [START_TOKEN, 60, 62, 64]  # Example starting notes
+start_sequence_durations = [START_TOKEN, 1, 1, 2]  # Example starting durations
 
 # Generate a new melody
 new_notes, new_durations = generate_melody(model, start_sequence_notes, start_sequence_durations)
