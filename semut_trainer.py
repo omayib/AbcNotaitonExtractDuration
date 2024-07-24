@@ -14,21 +14,36 @@ class Trainer:
         self.model.to(self.device)
         for epoch in range(self.num_epochs):
             print(f'epoch {epoch}')
+            self.total_loss = 0.0
+            self.total_accuracy = 0.0
+            self.total_sample = 0
+
+            self.model.train()
             for inputs, targets in self.dataloader:
                 inputs = inputs.view(inputs.shape[0], inputs.shape[1], 1).to(self.device)
-
                 targets = targets.to(self.device)
 
+                self.optimizer.zero_grad()
                 outputs = self.model(inputs)
                 loss = self.criterion(outputs, targets)
-
-                self.optimizer.zero_grad()
                 loss.backward()
                 self.optimizer.step()
 
-            if (epoch + 1) % 10 == 0:
-                print(f'Epoch [{epoch + 1}/{self.num_epochs}], Loss: {loss.item():.4f}')
+                self.total_loss += loss.item() * targets.size(0)
+                self.total_accuracy += self.calculate_accuracy(outputs, targets) * targets.size(0)
+                self.total_sample += targets.size(0)
 
+            avg_loss = self.total_loss / self.total_sample
+            avg_accuracy = self.total_accuracy / self.total_sample
+
+            if (epoch + 1) % 10 == 0:
+                print(f'Epoch [{epoch + 1}/{self.num_epochs}], Loss: {avg_loss:.4f}, accuracy {avg_accuracy:.4f}')
+
+    def calculate_accuracy(self, outputs, targets):
+        _,predicted = torch.max(outputs,1)
+        correct = (predicted==targets).sum().item()
+        accuracy = correct / targets.size(0)
+        return accuracy
 # Example usage:
 # Assuming `model`, `criterion`, `optimizer`, `dataloader`, and `device` are already defined
 # trainer = Trainer(model, criterion, optimizer, dataloader, device)

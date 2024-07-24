@@ -4,17 +4,24 @@ from semut_dataset import MusicDataset
 from torch.utils.data import Dataset, DataLoader
 from semut_trainer import Trainer
 from semut_lstm_model import SemutLSTMModel
+from semut_evaluation import semutEvaluation
+
 import torch
 import torch.nn as nn
 import random
+
 
 dir_path = 'dataset'
 
 pre = SemutPreprocessing(dir_path)
 notes = pre.get_notes_from_abc()
+print(f'pitchnames {notes}')
+
 
 unique_notes = sorted(set(notes))
+print(f'unique_notes {unique_notes}')
 pitchnames = sorted(set(item for item in unique_notes))
+print(f'pitchnames {pitchnames}')
 n_vocab = len(unique_notes)
 
 print(f'notes {notes}')
@@ -37,8 +44,15 @@ criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
 #train
-trainer = Trainer(model,criterion,optimizer,dataloader,device)
+trainer = Trainer(model, criterion, optimizer, dataloader, device, num_epochs=100)
 trainer.train()
+
+semutEval = semutEvaluation(model, dataloader, criterion, device)
+avg_loss, avg_accuracy = semutEval.evaluate()
+
+print(f'avg loss {avg_loss}, avg_accuracy {avg_accuracy}')
+# Save the trained model
+torch.save(model.state_dict(), 'model/lstm_music_model.pth')
 
 int_to_note = dict((number, note) for number, note in enumerate(pitchnames))
 
@@ -69,7 +83,7 @@ for note_idx in generated_notes:
     generated_abc.append(int_to_note[note_idx])
 
 # Save generated notes to an ABC file
-with open('generated_music.abc', 'w') as f:
+with open('output/generated_music.abc', 'w') as f:
     f.write("X: 1\nT: Generated Music\nM: 4/4\nK: C\n")
     f.write(' '.join(generated_abc))
 
